@@ -1,4 +1,4 @@
-21. Where in the codebase should CBE competency criteria go?
+22. Where in the codebase should CBE competency criteria go?
 ============================================================
 
 Context
