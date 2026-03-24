@@ -15,7 +15,38 @@ Authoring data (criteria definitions) and runtime learner data (status) have dif
 
 Decision
 --------
-The django-simple-history package will be used to track changes to competency achievement criteria definitions in Studio, providing an audit log of changes and the ability to revert to previous versions if needed. This approach allows us to capture the history of changes without the overhead of implementing a full publishable versioning framework for this initial implementation. The LMS will continue to display the latest published version of the criteria, consistent with current behavior, while Studio will show the latest edited version. This decision balances the need for version tracking and auditability with the desire to keep the initial implementation lightweight and performant, while still allowing for future enhancements to versioning if needed based on user feedback and evolving requirements.
+For the initial implementation, versioning and traceability of competency achievement criteria will be handled with a combination of model history and lifecycle guardrails:
+
+1. Apply `django-simple-history` to competency criteria definition tables:
+
+   - `oel_competency_criteria_group`
+   - `oel_competency_criteria`
+   - `oel_competency_rule_profile`
+
+   This provides historical row snapshots and audit metadata for authored criteria definitions, without adopting the full publishable framework for this phase.
+
+2. Do not apply `django-simple-history` to `oel_tagging_tag`, `oel_tagging_taxonomy`, or `oel_competency_taxonomy` in this phase.
+
+   These models are treated as non-evaluative display/metadata for competency criteria purposes; edits to names or metadata in these tables are not intended to change evaluation outcomes.
+
+3. `oel_tagging_objecttag` associations used by competency criteria follow post-use archive rules:
+
+   - Before any related learner status exists, edits and deletes are allowed.
+   - After any related learner status exists, disassociation/deletion is archive-only (soft delete), not hard delete.
+   - Archived rows remain queryable so learner status records can continue to be traced back to their source association.
+
+4. Authoring guardrails must warn on potentially impactful edits:
+
+   - If a user edits competency criteria definitions or competency object/tag associations after related learner status exists, Studio must display an explicit warning that student statuses have already been set, and these changes will be applied going forward, so existing learner statuses will not be retroactively updated.
+   - Applying these changes requires explicit user confirmation.
+
+5. Learner status tables are append-only history and do not use `django-simple-history`:
+
+   - For `student_competencycriteriastatus`, `student_competencycriteriagroupstatus`, and `student_competencystatus`, each status change is stored as a new row with `created` as the write timestamp.
+   - Existing learner status rows are not updated in place.
+   - Current status is determined by the most recent row for a given learner + target entity (ordered by `created`, with `id` as a tie-breaker).
+   - Older rows represent the learner status history and remain available for audit/tracing.
+
 
 Rejected Alternatives
 ---------------------
