@@ -72,7 +72,6 @@ Rejected Alternatives
         - First-class draft/published semantics with immutable historical versions  
         - Consistent APIs and patterns shared across other authoring apps  
     - Cons:  
-        - Inefficient for large nested structures because all children are copied for each new parent version  
         - Requires modeling criteria/groups as publishable entities and wiring Studio/LMS workflows to versioning APIs
         - Adds schema and migration complexity for a feature that does not yet require full versioning
 4. Append-only audit log table (event history)  
