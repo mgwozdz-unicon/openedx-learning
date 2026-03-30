@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Package metadata for openedx-learning.
+Package metadata for openedx-core.
 """
 import os
 import re
@@ -53,7 +53,7 @@ def is_requirement(line):
     return line and not line.startswith(('-r', '#', '-e', 'git+', '-c'))
 
 
-VERSION = get_version('openedx_learning', '__init__.py')
+VERSION = get_version('src', 'openedx_core', '__init__.py')
 
 if sys.argv[-1] == 'tag':
     print("Tagging the version on github:")
@@ -62,36 +62,31 @@ if sys.argv[-1] == 'tag':
     sys.exit()
 
 README = open(os.path.join(os.path.dirname(__file__), 'README.rst')).read()
-CHANGELOG = open(os.path.join(os.path.dirname(__file__), 'CHANGELOG.rst')).read()
 
 setup(
-    name='openedx-learning',
+    name='openedx-core',
     version=VERSION,
-    description="""Open edX Learning Core and Tagging.""",
-    long_description=README + '\n\n' + CHANGELOG,
+    description="Open edX Core: Foundational Packages for a Teaching & Learning Platform""",
+    long_description=README,
     author='David Ormsbee',
-    author_email='dave@tcril.org',
-    url='https://github.com/openedx/openedx-learning',
-    packages=find_packages(
-        include=['openedx_learning*', 'openedx_tagging*'],
-        exclude=['*.test', '*.tests']
-    ),
+    author_email='dave@axim.org',
+    url='https://github.com/openedx/openedx-core',
+    package_dir={"": "src"},
+    packages=find_packages("src"),
     include_package_data=True,
     install_requires=load_requirements('requirements/base.in'),
-    python_requires=">=3.11",
+    python_requires=">=3.12",
     license="AGPL 3.0",
     zip_safe=False,
     keywords='Python edx',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Framework :: Django',
-        'Framework :: Django :: 4.2',
         'Framework :: Django :: 5.2',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
     ],
 )

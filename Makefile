@@ -80,21 +80,19 @@ selfcheck: ## check that the Makefile is well-formed
 	@echo "The Makefile is well-formed."
 
 ## Localization targets
+# TODO: Need to audit these, and then actually tell openedx-translations
+# to use them. https://github.com/openedx/openedx-core/issues/483
 
 extract_translations: ## extract strings to be translated, outputting .mo files
 	rm -rf docs/_build
-	cd openedx_learning && ../manage.py makemessages -l en -v1 -d django
-	cd openedx_learning && ../manage.py makemessages -l en -v1 -d djangojs
-	cd openedx_tagging && ../manage.py makemessages -l en -v1 -d django
-	cd openedx_tagging && ../manage.py makemessages -l en -v1 -d djangojs
+	./manage.py makemessages -l en -v1 -d django
+	./manage.py makemessages -l en -v1 -d djangojs
 
 compile_translations: ## compile translation files, outputting .po files for each supported language
-	cd openedx_learning && ../manage.py compilemessages
-	cd openedx_tagging && ../manage.py compilemessages
+	./manage.py compilemessages
 
 detect_changed_source_translations:
-	cd openedx_learning && i18n_tool changed
-	cd openedx_tagging && i18n_tool changed
+	cd src && i18n_tool changed
 
 pull_translations: ## pull translations from Transifex
 	tx pull -a -f -t --mode reviewed
@@ -103,8 +101,7 @@ push_translations: ## push source translation files (.po) from Transifex
 	tx push -s
 
 dummy_translations: ## generate dummy translation (.po) files
-	cd openedx_learning && i18n_tool dummy
-	cd openedx_tagging && i18n_tool dummy
+	cd src && i18n_tool dummy
 
 build_dummy_translations: extract_translations dummy_translations compile_translations ## generate and compile dummy translation files
 
