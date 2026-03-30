@@ -1,5 +1,5 @@
 23. How should versioning be handled for CBE competency achievement criteria?
-=================================================================
+=============================================================================
 
 Context
 -------
@@ -17,19 +17,19 @@ Decision
 --------
 For the initial implementation, versioning and traceability of competency achievement criteria will be handled with a combination of model history and lifecycle guardrails:
 
-1. Apply `django-simple-history` to competency criteria definition tables:
+1. Apply ``django-simple-history`` to competency criteria definition moodels/tables:
 
-   - `oel_competency_criteria_group`
-   - `oel_competency_criteria`
-   - `oel_competency_rule_profile`
+   - ``CompetencyCriteriaGroup``
+   - ``CompetencyCriteria``
+   - ``CompetencyRuleProfile``
 
    This provides historical row snapshots and audit metadata for authored criteria definitions, without adopting the full publishable framework for this phase.
 
-2. Do not apply `django-simple-history` to `oel_tagging_tag`, `oel_tagging_taxonomy`, or `oel_competency_taxonomy` in this phase.
+2. Do not apply ``django-simple-history`` to ``oel_tagging_tag``, ``oel_tagging_taxonomy``, or ``CompetencyTaxonomy`` in this phase.
 
    These models are treated as non-evaluative display/metadata for competency criteria purposes; edits to names or metadata in these tables are not intended to change evaluation outcomes.
 
-3. `oel_tagging_objecttag` associations used by competency criteria follow post-use archive rules:
+3. ``oel_tagging_objecttag`` associations used by competency criteria follow post-use archive rules:
 
    - Before any related learner status exists, edits and deletes are allowed.
    - After any related learner status exists, disassociation/deletion is archive-only (soft delete), not hard delete.
@@ -40,11 +40,11 @@ For the initial implementation, versioning and traceability of competency achiev
    - If a user edits competency criteria definitions or competency object/tag associations after related learner status exists, Studio must display an explicit warning that student statuses have already been set, and these changes will be applied going forward, so existing learner statuses will not be retroactively updated.
    - Applying these changes requires explicit user confirmation.
 
-5. Learner status tables are append-only history and do not use `django-simple-history`:
+5. Learner status models/tables are append-only history and do not use ``django-simple-history``:
 
-   - For `student_competencycriteriastatus`, `student_competencycriteriagroupstatus`, and `student_competencystatus`, each status change is stored as a new row with `created` as the write timestamp.
+   - For ``StudentCompetencyCriteriaStatus``, ``StudentCompetencyCriteriaGroupStatus``, and ``StudentCompetencyStatus``, each status change is stored as a new row with ``created`` as the write timestamp.
    - Existing learner status rows are not updated in place.
-   - Current status is determined by the most recent row for a given learner + target entity (ordered by `created`, with `id` as a tie-breaker).
+   - Current status is determined by the most recent row for a given learner + target entity (ordered by ``created``, with ``id`` as a tie-breaker).
    - Older rows represent the learner status history and remain available for audit/tracing.
 
 
