@@ -54,7 +54,6 @@ Rejected Alternatives
 1. Defer competency achievement criteria versioning for the initial implementation. Store only the latest authored criteria and expose the latest published state in the LMS, consistent with current Studio/LMS behavior. 
     - Pros: 
         - Keeps the initial implementation lightweight
-        - Avoids the publishable framework's known inefficiencies for large nested structures
     - Cons:
         - There is no built-in rollback or audit history
         - Adding versioning later will require data migration and careful choices about draft vs published defaults
