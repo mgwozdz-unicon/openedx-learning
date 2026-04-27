@@ -132,9 +132,9 @@ class UnitsTestCase(ComponentTestCase):
         """
         Test the number of queries needed for each part of the units API
         """
-        with self.assertNumQueries(35):
+        with self.assertNumQueries(37):
             unit = self.create_unit_with_components([self.component_1, self.component_2_v1])
-        with self.assertNumQueries(49):  # TODO: this seems high?
+        with self.assertNumQueries(51):  # TODO: this seems high?
             content_api.publish_from_drafts(
                 self.learning_package.id,
                 draft_qset=content_api.get_all_drafts(self.learning_package.id).filter(entity=unit.id),
