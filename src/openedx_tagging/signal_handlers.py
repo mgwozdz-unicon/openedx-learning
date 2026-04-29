@@ -34,7 +34,8 @@ def _is_explicit_tag_delete(
     if isinstance(origin, Tag):
         return origin.pk == instance.pk
 
-    # No-op if the origin isn't a queryset of tags, since that would be unexpected and we don't want to risk emitting too many events.
+    # No-op if the origin isn't a queryset of tags, since that would be
+    # unexpected and we don't want to risk emitting too many events.
     if not isinstance(origin, QuerySet) or origin.model is not Tag:
         return False
 
