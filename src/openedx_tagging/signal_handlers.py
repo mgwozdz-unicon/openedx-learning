@@ -14,24 +14,41 @@ from openedx_tagging.tasks import (
 )
 
 
-def _is_explicit_tag_delete(instance: Tag, origin: object, using: str | None) -> bool:
+def _is_explicit_tag_delete(
+    instance: Tag,
+    origin: Tag | QuerySet[Tag] | None,
+    using: str | None,
+) -> bool:
     """
     Return True only for tags explicitly targeted by the delete operation.
 
     Descendants deleted via CASCADE are skipped here because the explicit root
     tag's handler emits updates for the whole subtree.
+
+    Args:
+        instance: The Tag being deleted.
+        origin: The source of the delete operation - either a Tag instance (for instance.delete())
+                or a QuerySet[Tag] (for queryset.delete()), or None for other origins.
+        using: The database alias to use for queries, passed from the Django signal.
     """
     if isinstance(origin, Tag):
         return origin.pk == instance.pk
 
+    # No-op if the origin isn't a queryset of tags, since that would be unexpected and we don't want to risk emitting too many events.
     if not isinstance(origin, QuerySet) or origin.model is not Tag:
         return False
 
+    # Check if this instance is in the set of explicitly-targeted tags. If not, it's being deleted
+    # as a CASCADE side-effect, so it's not explicit.
     explicit_tags = origin.using(using)
     if not explicit_tags.filter(pk=instance.pk).exists():
         return False
 
-    lineage_parts = instance.lineage.rstrip("\t").split("\t")
+    lineage_parts = instance.get_lineage()
+    # Build the tab-separated lineage strings for all ancestors to check if any of them are
+    # also in explicit_tags. If an ancestor was explicitly targeted, then this tag is a CASCADE
+    # side-effect, not explicitly deleted. For example, if lineage_parts is
+    # ["root", "parent", "child"], ancestor_lineages will be ["root\t", "root\tparent\t"].
     ancestor_lineages = ["\t".join(lineage_parts[:index]) + "\t" for index in range(1, len(lineage_parts))]
     if not ancestor_lineages:
         return True
@@ -70,6 +87,8 @@ def tag_pre_delete(sender, **kwargs):  # pylint: disable=unused-argument
     origin = kwargs.get("origin", None)
     using = kwargs.get("using", None)
 
+    # Return early if the instance is missing or hasn't been saved yet (no ID).
+    # In these cases, we can't proceed with the signal logic.
     if instance is None or instance.id is None:
         return
 

@@ -17,13 +17,7 @@ def _emit_content_object_associations_changed_for_object_ids(object_ids: Iterabl
     Emit CONTENT_OBJECT_ASSOCIATIONS_CHANGED once for each distinct object ID.
     """
     emitted_events = 0
-    seen_object_ids: set[str] = set()
-
-    for object_id in object_ids:
-        if object_id in seen_object_ids:
-            continue
-        seen_object_ids.add(object_id)
-
+    for object_id in set(object_ids):
         # .. event_implemented_name: CONTENT_OBJECT_ASSOCIATIONS_CHANGED
         # .. event_type: org.openedx.content_authoring.content.object.associations.changed.v1
         CONTENT_OBJECT_ASSOCIATIONS_CHANGED.send_event(
@@ -40,7 +34,7 @@ def _emit_content_object_associations_changed_for_object_ids(object_ids: Iterabl
 def _emit_content_object_associations_changed_for_tag(tag: Tag) -> int:
     """
     Emit CONTENT_OBJECT_ASSOCIATIONS_CHANGED events for each content object linked to this tag
-    via the ObjectTag assciations. This is used to trigger downstream updates
+    via the ObjectTag associations. This is used to trigger downstream updates
     like search index refreshes in Meilisearch.
     """
     object_ids = ObjectTag.objects.filter(tag=tag).values_list("object_id", flat=True).distinct()
