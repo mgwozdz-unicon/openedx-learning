@@ -839,7 +839,7 @@ class TestObjectTag(TestTagTaxonomyMixin, TestCase):
             (self.bacteria.value, True),  # <--- deleted! But the value is preserved.
         ]
 
-        # Then delete the whole free text taxonomy. 
+        # Then delete the whole free text taxonomy.
         # Patch explicit-delete detection because this
         # test validates ObjectTag deleted-state behavior, not tag deletion event-origins.
         with patch("openedx_tagging.signal_handlers._is_explicit_tag_delete", return_value=False):
