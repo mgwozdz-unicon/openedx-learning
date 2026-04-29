@@ -34,10 +34,12 @@ def _is_explicit_tag_delete(
     if isinstance(origin, Tag):
         return origin.pk == instance.pk
 
-    # No-op if the origin isn't a queryset of tags, since that would be
-    # unexpected and we don't want to risk emitting too many events.
-    if not isinstance(origin, QuerySet) or origin.model is not Tag:
-        return False
+    # Fail fast if origin has an unexpected type so callsites don't silently
+    # skip event emission logic.
+    if not isinstance(origin, QuerySet):
+        raise TypeError(f"Expected origin to be Tag, QuerySet[Tag], or None; got {type(origin).__name__}")
+    if origin.model is not Tag:
+        raise TypeError(f"Expected origin queryset model Tag; got {origin.model.__name__}")
 
     # Check if this instance is in the set of explicitly-targeted tags. If not, it's being deleted
     # as a CASCADE side-effect, so it's not explicit.
