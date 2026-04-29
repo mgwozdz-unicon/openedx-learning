@@ -17,7 +17,10 @@ from django.test.testcases import TestCase
 from openedx_tagging import api
 from openedx_tagging.models import LanguageTaxonomy, ObjectTag, Tag, Taxonomy
 from openedx_tagging.models.utils import RESERVED_TAG_CHARS
-from openedx_tagging.tasks import emit_content_object_associations_changed_for_tag_task
+from openedx_tagging.tasks import (
+    emit_content_object_associations_changed_for_object_ids_task,
+    emit_content_object_associations_changed_for_tag_task,
+)
 
 from .utils import pretty_format_tags
 
@@ -1113,6 +1116,70 @@ class TestTagLineage(TestCase):
 
         assert mock_task_delay.call_count == 1
         assert mock_task_delay.call_args[1]['tag_id'] == self.alice.id
+
+    @patch("openedx_tagging.signal_handlers.emit_content_object_associations_changed_for_object_ids_task.delay")
+    def test_delete_updates_search_index(self, mock_task_delay) -> None:
+        """
+        Deleting a tag should enqueue an async task that emits
+        CONTENT_OBJECT_ASSOCIATIONS_CHANGED events for affected objects.
+        """
+        object_id = "content-v1:org+course+run+type@unit+block@125"
+        ObjectTag.objects.create(
+            object_id=object_id,
+            taxonomy=self.bob.taxonomy,
+            tag=self.bob,
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.bob.delete()
+
+        assert mock_task_delay.call_count == 1
+        assert mock_task_delay.call_args[1]["object_ids"] == [object_id]
+
+    @patch("openedx_tagging.signal_handlers.emit_content_object_associations_changed_for_object_ids_task.delay")
+    def test_delete_with_descendants_updates_search_index(self, mock_task_delay) -> None:
+        """
+        Deleting a tag should also enqueue updates for any deleted descendants.
+        """
+        alice_object_id = "content-v1:org+course+run+type@unit+block@126"
+        delta_object_id = "content-v1:org+course+run+type@unit+block@127"
+        ObjectTag.objects.create(
+            object_id=alice_object_id,
+            taxonomy=self.alice.taxonomy,
+            tag=self.alice,
+        )
+        ObjectTag.objects.create(
+            object_id=delta_object_id,
+            taxonomy=self.delta.taxonomy,
+            tag=self.delta,
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            api.delete_tags_from_taxonomy(self.alice.taxonomy, ["Alice"], with_subtags=True)
+
+        assert mock_task_delay.call_count == 1
+        assert set(mock_task_delay.call_args.kwargs["object_ids"]) == {
+            alice_object_id,
+            delta_object_id,
+        }
+
+    @patch("openedx_tagging.tasks.CONTENT_OBJECT_ASSOCIATIONS_CHANGED", new_callable=MagicMock)
+    def test_emit_content_object_associations_changed_for_object_ids_task(self, mock_signal) -> None:
+        """Task emits one CONTENT_OBJECT_ASSOCIATIONS_CHANGED event per distinct object."""
+        first_object_id = "content-v1:org+course+run+type@unit+block@123"
+        second_object_id = "content-v1:org+course+run+type@unit+block@124"
+
+        emitted_events = emit_content_object_associations_changed_for_object_ids_task(
+            [first_object_id, second_object_id, first_object_id]
+        )
+
+        assert emitted_events == 2
+        assert mock_signal.send_event.call_count == 2
+        emitted_object_ids = {
+            call.kwargs["content_object"].object_id
+            for call in mock_signal.send_event.call_args_list
+        }
+        assert emitted_object_ids == {first_object_id, second_object_id}
 
     @patch("openedx_tagging.tasks.CONTENT_OBJECT_ASSOCIATIONS_CHANGED", new_callable=MagicMock)
     def test_emit_content_object_associations_changed_for_tag_task(self, mock_signal) -> None:
