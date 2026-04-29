@@ -1098,16 +1098,18 @@ class TestTagLineage(TestCase):
         assert self.bob.depth == 1
         assert self.bob.lineage == "Charlie\tBob\t"
 
+    # TODO: The following event-emission tests don't really belong in TestTagLineage.
+    # They should be moved to a separate test_events.py module.
     @patch("openedx_tagging.signal_handlers.emit_content_object_associations_changed_for_tag_task.delay")
     def test_rename_updates_search_index(self, mock_task_delay) -> None:
         """
         Renaming a tag should enqueue an async task that emits
         CONTENT_OBJECT_ASSOCIATIONS_CHANGED events.
         """
-        ObjectTag.objects.create(
+        api.tag_object(
             object_id="content-v1:org+course+run+type@unit+block@123",
             taxonomy=self.alice.taxonomy,
-            tag=self.alice,
+            tags=[self.alice.value],
         )
 
         with self.captureOnCommitCallbacks(execute=True):
@@ -1122,12 +1124,17 @@ class TestTagLineage(TestCase):
         """
         Deleting a tag should enqueue an async task that emits
         CONTENT_OBJECT_ASSOCIATIONS_CHANGED events for affected objects.
+
+        Note: this tests deleting a ``Tag`` (not an ``ObjectTag``). Deleting a
+        ``Tag`` triggers the event here in openedx-learning. Deleting an
+        ``ObjectTag`` (i.e. untagging a content object) triggers the same event
+        in openedx-platform instead, so that case is not tested here.
         """
         object_id = "content-v1:org+course+run+type@unit+block@125"
-        ObjectTag.objects.create(
+        api.tag_object(
             object_id=object_id,
             taxonomy=self.bob.taxonomy,
-            tag=self.bob,
+            tags=[self.bob.value],
         )
 
         with self.captureOnCommitCallbacks(execute=True):
@@ -1143,15 +1150,15 @@ class TestTagLineage(TestCase):
         """
         alice_object_id = "content-v1:org+course+run+type@unit+block@126"
         delta_object_id = "content-v1:org+course+run+type@unit+block@127"
-        ObjectTag.objects.create(
+        api.tag_object(
             object_id=alice_object_id,
             taxonomy=self.alice.taxonomy,
-            tag=self.alice,
+            tags=[self.alice.value],
         )
-        ObjectTag.objects.create(
+        api.tag_object(
             object_id=delta_object_id,
             taxonomy=self.delta.taxonomy,
-            tag=self.delta,
+            tags=[self.delta.value],
         )
 
         with self.captureOnCommitCallbacks(execute=True):
@@ -1186,15 +1193,15 @@ class TestTagLineage(TestCase):
         """Task emits one CONTENT_OBJECT_ASSOCIATIONS_CHANGED event per associated object."""
         first_object_id = "content-v1:org+course+run+type@unit+block@123"
         second_object_id = "content-v1:org+course+run+type@unit+block@124"
-        ObjectTag.objects.create(
+        api.tag_object(
             object_id=first_object_id,
             taxonomy=self.alice.taxonomy,
-            tag=self.alice,
+            tags=[self.alice.value],
         )
-        ObjectTag.objects.create(
+        api.tag_object(
             object_id=second_object_id,
             taxonomy=self.alice.taxonomy,
-            tag=self.alice,
+            tags=[self.alice.value],
         )
 
         emitted_events = emit_content_object_associations_changed_for_tag_task(self.alice.id)
