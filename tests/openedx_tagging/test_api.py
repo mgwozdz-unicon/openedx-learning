@@ -4,6 +4,7 @@ Test the tagging APIs
 from __future__ import annotations
 
 from typing import Any
+from unittest.mock import patch
 
 import ddt  # type: ignore[import]
 import pytest
@@ -741,7 +742,8 @@ class TestApiTagging(TestTagTaxonomyMixin, TestCase):
         # Now delete and disable things:
         disabled_taxonomy.enabled = False
         disabled_taxonomy.save()
-        self.free_text_taxonomy.delete()
+        with patch("openedx_tagging.signal_handlers._is_explicit_tag_delete", return_value=False):
+            self.free_text_taxonomy.delete()
         tagging_api.delete_tags_from_taxonomy(self.taxonomy, ["DPANN"], with_subtags=False)
 
         # Now retrieve the tags again:
