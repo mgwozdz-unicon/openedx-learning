@@ -11,7 +11,10 @@ Overview
 
 The ``openedx-core`` project holds Django apps which represent core teaching & learning platform concepts.
 
-Each app exposes stable, public API of Python functions and Django models. Some apps additionally provides REST APIs. These APIs are suitable for use in ``openedx-platform`` as well as in community-developed Open edX plugins.
+Each app exposes a public API of Python functions and Django models; some apps also provide REST APIs. These APIs are suitable for use in openedx-platform and in community-developed Open edX plugins.
+
+APIs marked "UNSTABLE" are subject to change at any time. All other APIs are considered stable, and any breaking changes will be announced through the community DEPR (deprecation and removal) process.
+
 
 Motivation
 ----------
@@ -44,10 +47,10 @@ We have a few different identifier types in the schema, and we try to avoid ``_i
 See Also
 ~~~~~~~~
 
-The structure of this repo follows [OEP-0049](https://open-edx-proposals.readthedocs.io/en/latest/architectural-decisions/oep-0049-django-app-patterns.html) where possible, and also borrows inspiration from:
+The structure of this repo follows `OEP-0049 <https://open-edx-proposals.readthedocs.io/en/latest/architectural-decisions/oep-0049-django-app-patterns.html>`_ where possible, and also borrows inspiration from:
 
-* [Scaling Django to 500 apps](https://2021.djangocon.us/talks/scaling-django-to-500-apps/) (Dan Palmer, DjangoCon US 2021)
-* [Django structure for scale and longevity](https://www.youtube.com/watch?v=yG3ZdxBb1oo) (Radoslav Georgiev, EuroPython 2018)
+* `Scaling Django to 500 apps <https://2021.djangocon.us/talks/scaling-django-to-500-apps/>`_ (Dan Palmer, DjangoCon US 2021)
+* `Django structure for scale and longevity <https://www.youtube.com/watch?v=yG3ZdxBb1oo>`_ (Radoslav Georgiev, EuroPython 2018)
 
 Code Overview
 -------------
@@ -62,11 +65,6 @@ License
 The code in this repository is licensed under the AGPL 3.0 unless otherwise noted.
 
 Please see `LICENSE.txt <LICENSE.txt>`_ for details.
-
-How To Contribute
------------------
-
-This repo is in a very experimental state. Discussion using GitHub Issues is welcome, but you probably don't want to make contributions as everything can shift around drastically with little notice.
 
 Reporting Security Issues
 -------------------------
