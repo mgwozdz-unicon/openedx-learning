@@ -4,7 +4,6 @@ Test the tagging base models
 
 from __future__ import annotations
 
-from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import ddt  # type: ignore[import]
@@ -668,20 +667,17 @@ class TestObjectTag(TestTagTaxonomyMixin, TestCase):
         self.object_tag.save()
         assert self.object_tag.export_id == self.taxonomy.export_id
 
-        # But if the taxonomy is deleted, then the object_tag's export_id reverts to our cached export_id.
-        # Patch explicit-delete detection because this test is about ObjectTag fallback behavior,
-        # not tag deletion event-origins.
-        with patch("openedx_tagging.signal_handlers._is_explicit_tag_delete", return_value=False):
-            self.taxonomy.delete()
+        # But if the taxonomy is deleted, then the object_tag's export_id reverts to our cached export_id
+        self.taxonomy.delete()
         self.object_tag.refresh_from_db()
         assert self.object_tag.export_id == "another-taxonomy"
 
-    def test_is_explicit_tag_delete_raises_for_unexpected_origin_type(self):
-        with pytest.raises(
-            TypeError,
-            match=r"Expected origin to be Tag, QuerySet\[Tag\], or None; got Taxonomy",
-        ):
-            _is_explicit_tag_delete(instance=self.tag, origin=cast(Any, self.taxonomy), using="default")
+    def test_is_explicit_tag_delete_returns_false_for_unexpected_origin_type(self):
+        assert _is_explicit_tag_delete(
+            instance=self.tag,
+            origin=self.taxonomy,
+            using="default",
+        ) is False
 
     def test_object_tag_value(self):
         # ObjectTag's value defaults to its tag's value
@@ -839,11 +835,8 @@ class TestObjectTag(TestTagTaxonomyMixin, TestCase):
             (self.bacteria.value, True),  # <--- deleted! But the value is preserved.
         ]
 
-        # Then delete the whole free text taxonomy.
-        # Patch explicit-delete detection because this
-        # test validates ObjectTag deleted-state behavior, not tag deletion event-origins.
-        with patch("openedx_tagging.signal_handlers._is_explicit_tag_delete", return_value=False):
-            self.free_text_taxonomy.delete()
+        # Then delete the whole free text taxonomy
+        self.free_text_taxonomy.delete()
 
         assert [(t.value, t.is_deleted) for t in api.get_object_tags(object_id, include_deleted=True)] == [
             ("bar", True),  # <--- Deleted, but the value is preserved
